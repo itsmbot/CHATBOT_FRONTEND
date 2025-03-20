@@ -921,7 +921,7 @@ const msalConfig = {
     auth: {
         clientId: "8afea2b4-ce8f-457c-bfe2-a70fcb161dff",
         authority: "https://login.microsoftonline.com/6e191e37-aea9-4f1a-b96b-073b145f0cce",
-        redirectUri: "http://localhost:5501/templates/",
+        redirectUri: "https://netx.eastus.cloudapp.azure.com/",
         navigateToLoginRequestUrl: false // Prevent redirect after popup
     },
     cache: {
