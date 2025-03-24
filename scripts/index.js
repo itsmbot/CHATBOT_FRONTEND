@@ -1768,7 +1768,7 @@ async function displayMessage(text, sender) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const baseUrl = "http://127.0.0.1:5000/server
+            const baseUrl = "http://127.0.0.1:5000/server";
             const endpoint = `${baseUrl}/log_message`;
             const method = "POST";
 
