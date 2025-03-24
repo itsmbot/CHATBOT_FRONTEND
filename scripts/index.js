@@ -1149,7 +1149,7 @@ function getEndpointForFunction(functionName) {
 
 async function fetchGreeting() {
     try {
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         const endpoint = `${baseUrl}/get_greeting`;
         const method = "POST";
 
@@ -1197,7 +1197,7 @@ async function displayGreetingAndDefaultMessage() {
 
 async function classifyDepartment(message) {
     try {
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         const endpoint = `${baseUrl}/department_detection?user_message=${encodeURIComponent(message)}`;
 
         console.log(`Sending department detection request for message: "${message}"`);
@@ -1229,7 +1229,7 @@ async function classifyDepartment(message) {
 
 async function callRAG(query, department) {
     try {
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         let endpoint = getEndpointForFunction('semantic_search_and_answer');
 
         if (!endpoint) {
@@ -1339,7 +1339,7 @@ function askForParameter() {
 
 async function sendTicketRequest() {
     try {
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         const endpoint = `${baseUrl}${currentStep.endpoint}`;
         const method = currentStep.methods[0];
 
@@ -1382,7 +1382,7 @@ async function sendTicketRequest() {
 
 async function sendDataFetchRequest() {
     try {
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         const endpoint = `${baseUrl}${currentStep.endpoint}`;
         const method = currentStep.methods[0];
 
@@ -1683,7 +1683,7 @@ async function checkTicketStatus(ticketNumber) {
             return;
         }
 
-        const baseUrl = "http://127.0.0.1:5000";
+        const baseUrl = "http://127.0.0.1:5000/server";
         const endpoint = `${baseUrl}${viewStep.endpoint}`;
 
         const queryParams = new URLSearchParams({
@@ -1768,7 +1768,7 @@ async function displayMessage(text, sender) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const baseUrl = "http://127.0.0.1:5000";
+            const baseUrl = "http://127.0.0.1:5000/server
             const endpoint = `${baseUrl}/log_message`;
             const method = "POST";
 
