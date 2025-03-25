@@ -1683,7 +1683,7 @@ async function checkTicketStatus(ticketNumber) {
             return;
         }
 
-        const baseUrl = "http://127.0.0.1:5000/server";
+        const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
         const endpoint = `${baseUrl}${viewStep.endpoint}`;
 
         const queryParams = new URLSearchParams({
