@@ -1,3 +1,4 @@
+// //OLD code
 // const chatContainer = document.getElementById("chat-container");
 // const chatInput = document.getElementById("chat-input");
 // const chatMessages = document.getElementById("chat-messages");
@@ -16,20 +17,170 @@
 // let waitingForSatisfactionFeedback = false;
 // let lastDepartment = null;
 // let lastQuery = "";
-// // Authentication state (persistent using localStorage)
+
+// // Authentication state
 // let isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-// let userName = localStorage.getItem('userName');
+// let userName = localStorage.getItem('userName') || '';
+
+// // MSAL Configuration
+// const msalConfig = {
+//     auth: {
+//         clientId: "8afea2b4-ce8f-457c-bfe2-a70fcb161dff",
+//         authority: "https://login.microsoftonline.com/6e191e37-aea9-4f1a-b96b-073b145f0cce",
+//         redirectUri: "https://netx.eastus.cloudapp.azure.com/",
+//         navigateToLoginRequestUrl: false // Prevent redirect after popup
+//     },
+//     cache: {
+//         cacheLocation: "localStorage",
+//         storeAuthStateInCookie: false
+//     }
+// };
+
+// const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+// // Handle MSAL redirect response on page load
+// async function handleRedirectResponse() {
+//     try {
+//         const response = await msalInstance.handleRedirectPromise();
+//         if (response) {
+//             console.log('Handling redirect response:', response);
+//             isAuthenticated = true;
+//             localStorage.setItem('isAuthenticated', 'true');
+//             userName = response.account.name || response.account.username.split('@')[0];
+//             localStorage.setItem('userName', userName);
+//             localStorage.setItem('msalAccount', JSON.stringify(response.account));
+//             chatMessages.innerHTML = '';
+//             await displayMessage(`Welcome, ${userName}! How can I assist you today?`, 'bot');
+//             // Clear URL fragment to prevent re-processing
+//             window.history.replaceState({}, document.title, window.location.pathname);
+//         }
+//     } catch (error) {
+//         console.error('Error handling redirect response:', error);
+//     }
+// }
+
 // // Prevent chat from closing when clicking inside it
 // chatContainer.addEventListener('click', (e) => {
 //     e.stopPropagation();
 //     console.log('Chat container clicked, preventing propagation');
 // });
 
+// async function displaySignInButton() {
+//     try {
+//         const messageElement = document.createElement('div');
+//         messageElement.classList.add('message', 'bot');
+
+//         const button = document.createElement('button');
+//         button.textContent = 'Sign in with Microsoft';
+//         button.style.padding = '8px 16px';
+//         button.style.backgroundColor = '#0078d4';
+//         button.style.color = 'white';
+//         button.style.border = 'none';
+//         button.style.borderRadius = '4px';
+//         button.style.cursor = 'pointer';
+
+//         button.addEventListener('click', async (e) => {
+//             e.preventDefault();
+//             try {
+//                 const loginRequest = {
+//                     scopes: ["User.Read"],
+//                     prompt: "select_account"
+//                 };
+//                 console.log('Initiating MSAL login popup with redirect URI:', msalConfig.auth.redirectUri);
+//                 const loginResponse = await msalInstance.loginRedirect(loginRequest);
+//                 console.log('Login response:', loginResponse);
+
+//                 isAuthenticated = true;
+//                 localStorage.setItem('isAuthenticated', 'true');
+//                 userName = loginResponse.account.name || loginResponse.account.username.split('@')[0];
+//                 localStorage.setItem('userName', userName);
+//                 localStorage.setItem('msalAccount', JSON.stringify(loginResponse.account));
+
+//                 console.log('User authenticated:', userName);
+//                 chatMessages.innerHTML = '';
+//                 await displayMessage(`Welcome, ${userName}! How can I assist you today?`, 'bot');
+//             } catch (error) {
+//                 console.error('Login error:', error);
+//                 let errorMessage = "Failed to sign in. Please try again.";
+//                 if (error.errorCode === "user_cancelled") errorMessage = "Login was cancelled.";
+//                 else if (error.errorCode === "access_denied") errorMessage = "Access was denied.";
+//                 await displayMessage(errorMessage, 'bot');
+//             }
+//         });
+
+//         messageElement.appendChild(button);
+//         chatMessages.appendChild(messageElement);
+//         setTimeout(() => messageElement.classList.add('visible'), 10);
+//         chatMessages.scrollTop = chatMessages.scrollHeight;
+//     } catch (error) {
+//         console.error('Error displaying sign-in button:', error);
+//         displayMessage("Error displaying sign-in option.", 'bot');
+//     }
+// }
+
+// async function fetchUserDetails(accessToken) {
+//     try {
+//         const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+//             method: 'GET',
+//             headers: {
+//                 'Authorization': `Bearer ${accessToken}`,
+//                 'Content-Type': 'application/json'
+//             }
+//         });
+//         if (!response.ok) throw new Error(`Graph API error! status: ${response.status}`);
+//         const userData = await response.json();
+//         console.log('User details fetched from Graph API:', userData);
+//         return userData;
+//     } catch (error) {
+//         console.error('Error fetching user details:', error);
+//         throw error;
+//     }
+// }
+
+// document.addEventListener('DOMContentLoaded', async () => {
+//     console.log('Page loaded, checking authentication state...');
+//     await handleRedirectResponse(); // Handle any redirect response first
+
+//     try {
+//         const accounts = msalInstance.getAllAccounts();
+//         console.log('Accounts found on load:', accounts);
+//         const storedAccount = localStorage.getItem('msalAccount') ? JSON.parse(localStorage.getItem('msalAccount')) : null;
+
+//         if (accounts.length > 0 && isAuthenticated && storedAccount) {
+//             const silentRequest = { scopes: ["User.Read"], account: accounts[0] };
+//             console.log('Attempting silent token acquisition for account:', accounts[0].username);
+//             const tokenResponse = await msalInstance.acquireTokenSilent(silentRequest);
+//             console.log('Silent token response:', tokenResponse);
+
+//             const userDetails = await fetchUserDetails(tokenResponse.accessToken);
+//             userName = userDetails.displayName || userDetails.mail || userDetails.userPrincipalName.split('@')[0];
+//             localStorage.setItem('userName', userName);
+//             isAuthenticated = true;
+//             localStorage.setItem('isAuthenticated', 'true');
+//             console.log('User already authenticated:', userName);
+
+//             chatMessages.innerHTML = '';
+//             await displayMessage(`Welcome back, ${userName}! How can I assist you today?`, 'bot');
+//         } else {
+//             console.log('No valid authenticated session found, prompting for login.');
+//             await displayGreetingAndDefaultMessage();
+//         }
+//     } catch (error) {
+//         console.error('Silent token acquisition failed:', error);
+//         isAuthenticated = false;
+//         localStorage.setItem('isAuthenticated', 'false');
+//         localStorage.removeItem('userName');
+//         localStorage.removeItem('msalAccount');
+//         await displayMessage("Session expired or invalid. Please sign in again.", 'bot');
+//         await displayGreetingAndDefaultMessage();
+//     }
+// });
+
 // // Function to load the orchestration file
 // async function loadOrchestrationFile() {
 //     console.log('Loading Orchestration File...');
 //     try {
-//         const response = await fetch('http://127.0.0.1:5000/get_orchestration');
+//         const response = await fetch('https://netx.eastus.cloudapp.azure.com/server/get_orchestration');
 //         if (!response.ok) {
 //             throw new Error(`HTTP error! status: ${response.status}`);
 //         }
@@ -104,7 +255,7 @@
 
 // async function fetchGreeting() {
 //     try {
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         const endpoint = `${baseUrl}/get_greeting`;
 //         const method = "POST";
 
@@ -152,7 +303,7 @@
 
 // async function classifyDepartment(message) {
 //     try {
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         const endpoint = `${baseUrl}/department_detection?user_message=${encodeURIComponent(message)}`;
 
 //         console.log(`Sending department detection request for message: "${message}"`);
@@ -182,79 +333,9 @@
 //     }
 // }
 
-// async function displaySignInButton() {
-//     try {
-//         const messageElement = document.createElement('div');
-//         messageElement.classList.add('message', 'bot');
-
-//         const button = document.createElement('button');
-//         button.textContent = 'Sign in with Microsoft';
-//         button.style.padding = '8px 16px';
-//         button.style.backgroundColor = '#0078d4';
-//         button.style.color = 'white';
-//         button.style.border = 'none';
-//         button.style.borderRadius = '4px';
-//         button.style.cursor = 'pointer';
-
-//         button.addEventListener('click', async () => {
-//             try {
-//                 const authUrl = await fetchAuthUrl();
-//                 if (authUrl) {
-//                     window.location.href = authUrl; // Redirect to Microsoft login
-//                 } else {
-//                     displayMessage("Failed to initiate sign-in. Please try again.", 'bot');
-//                 }
-//             } catch (error) {
-//                 console.error('Error initiating sign-in:', error);
-//                 displayMessage("Error starting authentication. Please try again.", 'bot');
-//             }
-//         });
-
-//         messageElement.appendChild(button);
-//         chatMessages.appendChild(messageElement);
-
-//         setTimeout(() => {
-//             messageElement.classList.add('visible');
-//         }, 10);
-
-//         chatMessages.scrollTop = chatMessages.scrollHeight;
-//     } catch (error) {
-//         console.error('Error displaying sign-in button:', error);
-//         displayMessage("Error displaying sign-in option.", 'bot');
-//     }
-// }
-
-// async function fetchAuthUrl() {
-//     try {
-//         const response = await fetch('http://127.0.0.1:5000/microsoft/login', {
-//             method: 'GET',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//         });
-//         console.log("/microsoft/login");
-
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         if (data.status === 'success' && data.auth_url) {
-//             console.log('Auth URL fetched:', data.auth_url);
-//             return data.auth_url;
-//         } else {
-//             console.error('Error in auth URL response:', data.error);
-//             return null;
-//         }
-//     } catch (error) {
-//         console.error('Error fetching auth URL:', error);
-//         return null;
-//     }
-// }
-
 // async function callRAG(query, department) {
 //     try {
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         let endpoint = getEndpointForFunction('semantic_search_and_answer');
 
 //         if (!endpoint) {
@@ -283,43 +364,6 @@
 //     } catch (error) {
 //         console.error('Error while fetching RAG response:', error.message);
 //         return "I couldn't find information on that. Would you like to create a ticket instead?";
-//     }
-// }
-
-// async function handleAuthCallback(code) {
-//     try {
-//         const response = await fetch('http://127.0.0.1:5000/getAToken', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify({ code: code }),
-//         });
-
-//         console.log('http://localhost:5000/getAToken Iam being ExECUTED!!!!!');
-
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         if (data.status === 'success' && data.user) {
-//             isAuthenticated = true;
-//             userName = data.user.displayName || data.user.userPrincipalName.split('@')[0];
-
-//             // Store in localStorage for persistence
-//             localStorage.setItem('isAuthenticated', 'true');
-//             localStorage.setItem('userName', userName);
-
-//             // Redirect to homepage or show UI changes
-//             window.location.href = '/';  // Redirect to homepage or dashboard
-//         } else {
-//             console.error('Error in callback response:', data.error);
-//             displayMessage(`Authentication failed: ${data.error || 'Unknown error'}`, 'bot');
-//         }
-//     } catch (error) {
-//         console.error('Error handling auth callback:', error);
-//         displayMessage("Error completing authentication. Please try again.", 'bot');
 //     }
 // }
 
@@ -401,7 +445,7 @@
 
 // async function sendTicketRequest() {
 //     try {
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         const endpoint = `${baseUrl}${currentStep.endpoint}`;
 //         const method = currentStep.methods[0];
 
@@ -444,7 +488,7 @@
 
 // async function sendDataFetchRequest() {
 //     try {
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         const endpoint = `${baseUrl}${currentStep.endpoint}`;
 //         const method = currentStep.methods[0];
 
@@ -483,25 +527,6 @@
 //         parameterIndex = 0;
 //     }
 // }
-
-// // Automatically detect authentication callback on page load
-// document.addEventListener('DOMContentLoaded', async function () {
-//     const urlParams = new URLSearchParams(window.location.search);
-//     const code = urlParams.get('code');
-//     const error = urlParams.get('error');
-
-//     if (code || error) {
-//         // Clear URL parameters after processing
-//         window.history.replaceState({}, document.title, window.location.pathname);
-
-//         if (error) {
-//             console.error('Authentication error:', error);
-//             displayMessage(`Authentication failed: ${error}`, 'bot');
-//         } else if (code) {
-//             await handleAuthCallback(code);
-//         }
-//     }
-// });
 
 // async function toggleChat() {
 //     isChatOpen = !isChatOpen;
@@ -764,7 +789,7 @@
 //             return;
 //         }
 
-//         const baseUrl = "http://127.0.0.1:5000";
+//         const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //         const endpoint = `${baseUrl}${viewStep.endpoint}`;
 
 //         const queryParams = new URLSearchParams({
@@ -849,7 +874,7 @@
 //         chatMessages.scrollTop = chatMessages.scrollHeight;
 
 //         try {
-//             const baseUrl = "http://127.0.0.1:5000";
+//             const baseUrl = "https://netx.eastus.cloudapp.azure.com/server";
 //             const endpoint = `${baseUrl}/log_message`;
 //             const method = "POST";
 
@@ -891,7 +916,6 @@
 //     }
 // });
 
-// console.log('Enhanced chat script initialized with improved ticket flow and organized code');
 
 const chatContainer = document.getElementById("chat-container");
 const chatInput = document.getElementById("chat-input");
@@ -903,6 +927,8 @@ let parameterIndex = 0;
 let ticketData = {}; 
 let availableTicketingSystems = []; 
 let availableDatabases = []; 
+// Add this to the state tracking variables at the top
+let waitingForFurtherAssistance = false;
 
 // State tracking variables
 let waitingForTicketID = false;
@@ -921,7 +947,7 @@ const msalConfig = {
     auth: {
         clientId: "8afea2b4-ce8f-457c-bfe2-a70fcb161dff",
         authority: "https://login.microsoftonline.com/6e191e37-aea9-4f1a-b96b-073b145f0cce",
-        redirectUri: "https://netx.eastus.cloudapp.azure.com/",
+        redirectUri: "http://localhost:5501/templates/",
         navigateToLoginRequestUrl: false // Prevent redirect after popup
     },
     cache: {
@@ -1175,25 +1201,45 @@ async function fetchGreeting() {
     }
 }
 
+// async function displayGreetingAndDefaultMessage() {
+//     try {
+//         const greeting = await fetchGreeting();
+//         const defaultMessage = 'How can I assist you today?';
+
+//         if (!isAuthenticated) {
+//             await displayMessage(`${greeting} ${defaultMessage}`, 'bot');
+//             await displaySignInButton();
+//         } else {
+//             await displayMessage(`${greeting} ${userName}! ${defaultMessage}`, 'bot');
+//         }
+//     } catch (error) {
+//         console.error('Error displaying greeting:', error);
+//         await displayMessage("Hello! How can I assist you today?", 'bot');
+//         if (!isAuthenticated) {
+//             await displaySignInButton();
+//         }
+//     }
+// }
+
 async function displayGreetingAndDefaultMessage() {
     try {
-        const greeting = await fetchGreeting();
-        const defaultMessage = 'How can I assist you today?';
-
         if (!isAuthenticated) {
-            await displayMessage(`${greeting} ${defaultMessage}`, 'bot');
             await displaySignInButton();
         } else {
+            const greeting = await fetchGreeting();
+            const defaultMessage = 'How can I assist you today?';
             await displayMessage(`${greeting} ${userName}! ${defaultMessage}`, 'bot');
         }
     } catch (error) {
         console.error('Error displaying greeting:', error);
-        await displayMessage("Hello! How can I assist you today?", 'bot');
         if (!isAuthenticated) {
             await displaySignInButton();
+        } else {
+            await displayMessage("Hello! How can I assist you today?", 'bot');
         }
     }
 }
+
 
 async function classifyDepartment(message) {
     try {
@@ -1366,6 +1412,8 @@ async function sendTicketRequest() {
             const successMessage = `Ticket ${ticketNumber} created successfully!`;
             displayMessage(successMessage, 'bot');
             displayMessage("Is there anything else I can help you with today?", 'bot');
+            waitingForFurtherAssistance = true; // Set the flag
+
         } else {
             console.error(`Invalid ticket creation response:`, result);
             displayMessage("The ticket was processed, but I couldn't retrieve a reference number. Please contact support if you need to follow up.", 'bot');
@@ -1501,8 +1549,28 @@ function resetConversationState() {
 async function processUserMessage(message) {
     try {
         console.log(`Processing user message: "${message}"`);
-        console.log(`Current state - waitingForTicketDescription: ${waitingForTicketDescription}, waitingForTicketConfirmation: ${waitingForTicketConfirmation}, waitingForSatisfactionFeedback: ${waitingForSatisfactionFeedback}, waitingForTicketID: ${waitingForTicketID}`);
+        console.log(`Current state - waitingForTicketDescription: ${waitingForTicketDescription}, waitingForTicketConfirmation: ${waitingForTicketConfirmation}, waitingForSatisfactionFeedback: ${waitingForSatisfactionFeedback}, waitingForTicketID: ${waitingForTicketID}, waitingForFurtherAssistance: ${waitingForFurtherAssistance}`);
 
+        // Check if waiting for response to "Is there anything else I can help you with today?"
+        if (waitingForFurtherAssistance) {
+            waitingForFurtherAssistance = false; // Reset the flag
+            
+            // Check for negative responses
+            if (message.toLowerCase().includes('no') || 
+                message.toLowerCase().includes('nope') || 
+                message.toLowerCase().includes('that\'s all') || 
+                message.toLowerCase().includes('that is all') ||
+                message.toLowerCase().includes('i\'m good') ||
+                message.toLowerCase().includes('im good') ||
+                message.toLowerCase().includes('i am good') ||
+                message.toLowerCase().includes('nothing else') ||
+                message.toLowerCase().includes('that will be all')) {
+                
+                displayMessage("Thank you for reaching out today! It was my pleasure to assist you. Have a great day!", 'bot');
+                return;
+            }
+            // For positive responses, continue with normal flow
+        }
         const statusCheck = message.match(/\b(?:status of|check the status of|what is the status of|give me the status of)\s*(INC\d+)\b/i);
 
         if (statusCheck) {
@@ -1521,7 +1589,6 @@ async function processUserMessage(message) {
             }
             return;
         }
-
         if (waitingForTicketDescription) {
             console.log("Processing ticket description input");
             waitingForTicketDescription = false;
@@ -1563,9 +1630,9 @@ async function processUserMessage(message) {
                 message.toLowerCase().includes('thanks') ||
                 message.toLowerCase().includes('thank')) {
                 displayMessage("Glad I could assist you. Let me know if you have any other queries.", 'bot');
-            } else if (message.toLowerCase().includes('yes create') || 
-                      message.toLowerCase().includes('ticket') || 
-                      message.toLowerCase().includes('incident')) {
+            } else if (message.toLowerCase().includes('no') || 
+                      message.toLowerCase().includes('create ticket') || 
+                      message.toLowerCase().includes('create incident')) {
                 displayMessage("Please describe the issue in detail.", 'bot');
                 waitingForTicketDescription = true;
             } else {
@@ -1589,7 +1656,7 @@ async function processUserMessage(message) {
                     displayMessage(ragResponse, 'bot');
 
                     setTimeout(() => {
-                        displayMessage("Is this helpful or would you like me to create an incident?", 'bot');
+                        displayMessage("Was this helpful? If not, I can create an incident for you.", 'bot');
                         waitingForSatisfactionFeedback = true;
                         console.log("Waiting for satisfaction feedback set to true");
                     }, 1000);
@@ -1607,7 +1674,7 @@ async function processUserMessage(message) {
                     displayMessage(ragResponse, 'bot');
 
                     setTimeout(() => {
-                        displayMessage("Is this helpful or would you like me to create an incident?", 'bot');
+                        displayMessage("Was this helpful? If not, I can create an incident for you.", 'bot');
                         waitingForSatisfactionFeedback = true;
                         console.log("Waiting for satisfaction feedback set to true");
                     }, 1000);
@@ -1643,7 +1710,7 @@ async function processUserMessage(message) {
             displayMessage(ragResponse, 'bot');
 
             setTimeout(() => {
-                displayMessage("Is this helpful or would you like me to create an incident?", 'bot');
+                displayMessage("Was this helpful? If not, I can create an incident for you.", 'bot');
                 waitingForSatisfactionFeedback = true;
                 console.log("Waiting for satisfaction feedback set to true");
             }, 1000);
@@ -1661,7 +1728,7 @@ async function processUserMessage(message) {
             displayMessage(ragResponse, 'bot');
 
             setTimeout(() => {
-                displayMessage("Is this helpful or would you like me to create an incident?", 'bot');
+                displayMessage("Was this helpful? If not, I can create an incident for you.", 'bot');
                 waitingForSatisfactionFeedback = true;
                 console.log("Waiting for satisfaction feedback set to true");
             }, 1000);
